@@ -142,25 +142,6 @@ input[type="text"]:focus { border-color: #378add; }
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
   let selectedStatus = null;
   let saturdayDate = '';
-
-  // 세탁당번 순환 명단 (6/13 = 0번 인덱스 = 심은혁부터 시작)
-  const DUTY_LIST = [
-    '심은혁','서주환','김경진','경상일','홍승록','설주환','이강호','구현우',
-    '허창걸','이지훈','김태형','최효근','유동연','허영환','유경태','이승민',
-    '강성금산','이성기','박재홍','박진영','서정현','김승환','오갑석',
-    '박민규','이종혁','김순환'
-  ];
-  // 기준일: 2026-06-13 (인덱스 0)
-  const DUTY_BASE_DATE = new Date(2026, 5, 13);
-
-  function getDutyIndexForDate(satDate) {
-    const diffDays = Math.round((satDate - DUTY_BASE_DATE) / (1000*60*60*24));
-    const weekDiff = Math.round(diffDays / 7);
-    let idx = weekDiff % DUTY_LIST.length;
-    if (idx < 0) idx += DUTY_LIST.length;
-    return idx;
-  }
-
   function getNextSaturday() {
     const now = new Date();
     const day = now.getDay();
@@ -182,36 +163,15 @@ input[type="text"]:focus { border-color: #378add; }
     const month = sat.getMonth() + 1;
     const day = sat.getDate();
     saturdayDate = formatDateStr(sat);
-    window.currentSaturday = sat;
     document.getElementById('big-date').textContent = month + '월 ' + day + '일 토요일';
   }
 
-  function updateDuty(records) {
-    const sat = window.currentSaturday;
-    let idx = getDutyIndexForDate(sat);
-    const total = DUTY_LIST.length;
-
-    const statusMap = {};
-    (records || []).forEach(r => { statusMap[r.name] = r.status; });
-
-    let candidate = DUTY_LIST[idx];
-    let swapped = false;
-    let tries = 0;
-
-    while (statusMap[candidate] === 'absent' && tries < total) {
-      idx = (idx + 1) % total;
-      candidate = DUTY_LIST[idx];
-      swapped = true;
-      tries++;
-    }
-
+  function updateDuty(dutyName) {
     const el = document.getElementById('duty-name');
-    el.textContent = candidate + (swapped ? ' ' : '');
-    if (swapped) {
-      const note = document.createElement('span');
-      note.className = 'swap-note';
-      note.textContent = '(불참자 대체)';
-      el.appendChild(note);
+    if (dutyName) {
+      el.textContent = dutyName;
+    } else {
+      el.textContent = '미정';
     }
   }
 
@@ -240,7 +200,6 @@ input[type="text"]:focus { border-color: #378add; }
         list.innerHTML = groups[s].map(n => '<span class="member-chip">' + n + '</span>').join('');
       }
     });
-    updateDuty(data);
   }
 
   function loadAttendance() {
@@ -249,11 +208,12 @@ input[type="text"]:focus { border-color: #378add; }
       delete window[cb];
       document.getElementById('load-script') && document.getElementById('load-script').remove();
       renderMembers(data.records || []);
+      updateDuty(data.duty);
     };
     const script = document.createElement('script');
     script.id = 'load-script';
     script.src = PROXY_URL + '?action=getAttendance&date=' + saturdayDate + '&callback=' + cb;
-    script.onerror = function() { renderMembers([]); };
+    script.onerror = function() { renderMembers([]); updateDuty(null); };
     document.body.appendChild(script);
   }
 
@@ -280,6 +240,7 @@ input[type="text"]:focus { border-color: #378add; }
         });
         document.getElementById('status-hint').textContent = '';
         loadAttendance();
+        updateDuty(result.duty);
         const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
         alert(name + '님 ' + statusText[result.status] + ' 등록 완료!');
       } else {
