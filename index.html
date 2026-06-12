@@ -8,66 +8,103 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #111; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
 .wrap { max-width: 480px; margin: 0 auto; }
-.title-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; text-align: center; }
-.date-badge { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 20px; background: #e6f1fb; color: #185fa5; margin-bottom: 0.5rem; }
-.title-text { font-size: 17px; font-weight: 500; color: #111; line-height: 1.5; }
+
+.title-card { background: linear-gradient(135deg, #185fa5, #2b7fd6); border-radius: 16px; padding: 1.75rem 1.25rem; margin-bottom: 1rem; text-align: center; color: #fff; }
+.club-name { font-size: 13px; opacity: 0.85; margin-bottom: 8px; letter-spacing: 0.05em; }
+.big-date { font-size: 34px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
+.sub-info { font-size: 15px; opacity: 0.95; font-weight: 500; }
+
 .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-.section-title { font-size: 12px; font-weight: 500; color: #999; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.75rem; }
-label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
+.section-title { font-size: 13px; font-weight: 600; color: #444; letter-spacing: 0.02em; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
+
+label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 8px; }
 .required { color: #e24b4a; margin-left: 2px; }
-input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; background: #fff; color: #111; }
+input[type="text"] { width: 100%; padding: 13px 14px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; background: #fff; color: #111; }
 input[type="text"]:focus { border-color: #378add; }
+
 .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.status-btn { border: 1px solid #ddd; border-radius: 8px; padding: 12px 4px; font-size: 14px; font-weight: 500; text-align: center; cursor: pointer; background: #fff; color: #111; transition: all 0.15s; user-select: none; }
+.status-btn { border: 1.5px solid #ddd; border-radius: 10px; padding: 16px 4px; font-size: 15px; font-weight: 600; text-align: center; cursor: pointer; background: #fff; color: #111; transition: all 0.15s; user-select: none; }
 .status-btn:hover { background: #f5f5f5; }
+.status-btn .icon { font-size: 24px; display: block; margin-bottom: 6px; }
 .status-btn.sel-attend { background: #eaf3de; color: #3b6d11; border-color: #97c459; }
 .status-btn.sel-absent { background: #fcebeb; color: #a32d2d; border-color: #f09595; }
 .status-btn.sel-undecided { background: #faeeda; color: #854f0b; border-color: #ef9f27; }
-.submit-btn { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #111; color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 0.75rem; transition: opacity 0.15s; }
-.submit-btn:hover { opacity: 0.85; }
+
+.submit-btn { width: 100%; padding: 16px; border-radius: 10px; border: none; background: #185fa5; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 1rem; transition: opacity 0.15s; }
+.submit-btn:hover { opacity: 0.88; }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.hint { font-size: 12px; color: #999; margin-top: 8px; }
-.divider { height: 1px; background: #f0f0f0; margin: 1rem 0; }
-.count-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
-.count-card { background: #f5f5f5; border-radius: 8px; padding: 10px; text-align: center; }
-.count-num { font-size: 22px; font-weight: 500; }
-.count-label { font-size: 12px; color: #666; margin-top: 2px; }
+.hint { font-size: 12px; color: #999; margin-top: 8px; text-align: center; }
+
+.count-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+.count-card { border-radius: 10px; padding: 14px 8px; text-align: center; }
+.count-card.cc-attend { background: #eaf3de; }
+.count-card.cc-absent { background: #fcebeb; }
+.count-card.cc-undecided { background: #faeeda; }
+.count-num { font-size: 26px; font-weight: 700; }
+.count-label { font-size: 12px; margin-top: 2px; font-weight: 600; }
 .cnt-attend { color: #3b6d11; }
 .cnt-absent { color: #a32d2d; }
 .cnt-undecided { color: #854f0b; }
+
+.divider { height: 1px; background: #f0f0f0; margin: 1rem 0; }
 .member-group { margin-bottom: 1rem; }
 .member-group:last-child { margin-bottom: 0; }
-.group-label { font-size: 12px; font-weight: 500; padding: 3px 8px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
+.group-label { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
 .lbl-attend { background: #eaf3de; color: #3b6d11; }
 .lbl-absent { background: #fcebeb; color: #a32d2d; }
 .lbl-undecided { background: #faeeda; color: #854f0b; }
 .member-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
-.member-chip { font-size: 13px; padding: 4px 10px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #111; }
-.empty-msg { font-size: 13px; color: #bbb; }
-.loading { font-size: 13px; color: #999; text-align: center; padding: 1rem; }
+.member-chip { font-size: 13px; padding: 5px 12px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #111; font-weight: 500; }
+.empty-msg { font-size: 13px; color: #ccc; padding-top: 2px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+
   <div class="title-card">
-    <div class="date-badge" id="date-badge">한마음 FC</div>
-    <div class="title-text" id="main-title">이번주 토요일 저녁 7시 풋살 출석체크</div>
+    <div class="club-name">⚽ 한마음 FC</div>
+    <div class="big-date" id="big-date">6월 13일 토요일</div>
+    <div class="sub-info">저녁 7시 풋살 출석체크</div>
   </div>
 
   <div class="card">
-    <p class="section-title">출석 현황</p>
+    <p class="section-title">📝 출석 등록</p>
+    <div style="margin-bottom:1.25rem;">
+      <label>이름 <span class="required">*</span></label>
+      <input type="text" id="name" placeholder="실명으로 입력해 주세요" />
+    </div>
+    <div>
+      <label>출석 여부 <span class="required">*</span></label>
+      <div class="status-grid">
+        <div class="status-btn" id="btn-attend" onclick="selectStatus('attend')">
+          <span class="icon">✓</span>출석
+        </div>
+        <div class="status-btn" id="btn-absent" onclick="selectStatus('absent')">
+          <span class="icon">✗</span>불참
+        </div>
+        <div class="status-btn" id="btn-undecided" onclick="selectStatus('undecided')">
+          <span class="icon">?</span>미정
+        </div>
+      </div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="submitForm()">제출하기</button>
+    <p class="hint" id="status-hint"></p>
+  </div>
+
+  <div class="card">
+    <p class="section-title">📊 출석 현황</p>
     <div class="count-grid">
-      <div class="count-card">
+      <div class="count-card cc-attend">
         <div class="count-num cnt-attend" id="cnt-attend">-</div>
-        <div class="count-label">출석</div>
+        <div class="count-label cnt-attend">출석</div>
       </div>
-      <div class="count-card">
+      <div class="count-card cc-absent">
         <div class="count-num cnt-absent" id="cnt-absent">-</div>
-        <div class="count-label">불참</div>
+        <div class="count-label cnt-absent">불참</div>
       </div>
-      <div class="count-card">
+      <div class="count-card cc-undecided">
         <div class="count-num cnt-undecided" id="cnt-undecided">-</div>
-        <div class="count-label">미정</div>
+        <div class="count-label cnt-undecided">미정</div>
       </div>
     </div>
     <div class="member-group">
@@ -86,29 +123,6 @@ input[type="text"]:focus { border-color: #378add; }
     </div>
   </div>
 
-  <div class="card">
-    <p class="section-title">출석 등록</p>
-    <div style="margin-bottom:1.25rem;">
-      <label>이름 <span class="required">*</span></label>
-      <input type="text" id="name" placeholder="실명으로 입력해 주세요" />
-    </div>
-    <div>
-      <label>출석 여부 <span class="required">*</span></label>
-      <div class="status-grid">
-        <div class="status-btn" id="btn-attend" onclick="selectStatus('attend')">
-          <span style="font-size:20px; display:block; margin-bottom:4px;">✓</span>출석
-        </div>
-        <div class="status-btn" id="btn-absent" onclick="selectStatus('absent')">
-          <span style="font-size:20px; display:block; margin-bottom:4px;">✗</span>불참
-        </div>
-        <div class="status-btn" id="btn-undecided" onclick="selectStatus('undecided')">
-          <span style="font-size:20px; display:block; margin-bottom:4px;">?</span>미정
-        </div>
-      </div>
-      <p class="hint" id="status-hint"></p>
-    </div>
-    <button class="submit-btn" id="submit-btn" onclick="submitForm()">제출하기</button>
-  </div>
 </div>
 
 <script>
@@ -137,9 +151,7 @@ input[type="text"]:focus { border-color: #378add; }
     const month = sat.getMonth() + 1;
     const day = sat.getDate();
     saturdayDate = formatDateStr(sat);
-    document.getElementById('date-badge').textContent = month + '월 ' + day + '일 토요일';
-    document.getElementById('main-title').textContent =
-      '이번주 ' + month + '월 ' + day + '일 토요일 저녁 7시 풋살 출석체크';
+    document.getElementById('big-date').textContent = month + '월 ' + day + '일 토요일';
   }
 
   function selectStatus(status) {
