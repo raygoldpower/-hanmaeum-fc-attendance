@@ -142,10 +142,19 @@ input[type="text"]:focus { border-color: #378add; }
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
   let selectedStatus = null;
   let saturdayDate = '';
-  function getNextSaturday() {
+  function getTargetSaturday() {
     const now = new Date();
-    const day = now.getDay();
-    const diff = (6 - day + 7) % 7 || 7;
+    const day = now.getDay(); // 0=일, 1=월 ... 6=토
+
+    let diff;
+    if (day === 0) {
+      diff = -1; // 일요일 -> 어제(지난 토요일)
+    } else if (day === 6) {
+      diff = 0;  // 토요일 -> 오늘
+    } else {
+      diff = 6 - day; // 월~금 -> 이번주 토요일
+    }
+
     const sat = new Date(now);
     sat.setDate(now.getDate() + diff);
     return sat;
@@ -159,7 +168,7 @@ input[type="text"]:focus { border-color: #378add; }
   }
 
   function initTitle() {
-    const sat = getNextSaturday();
+    const sat = getTargetSaturday();
     const month = sat.getMonth() + 1;
     const day = sat.getDate();
     saturdayDate = formatDateStr(sat);
