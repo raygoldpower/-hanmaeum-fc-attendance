@@ -79,6 +79,7 @@ input[type="text"]:focus { border-color: #378add; }
       <div class="duty-text">이번주 조끼 세탁 당번</div>
       <div class="duty-name" id="duty-name">불러오는 중...</div>
       <div class="duty-desc">불참 시 다음 순번이 대신하며, 본인은 다음 차례에 다시 당번이 됩니다.</div>
+      <div class="duty-desc" id="next-duty-line" style="display:none;"></div>
     </div>
   </div>
 
@@ -177,9 +178,10 @@ input[type="text"]:focus { border-color: #378add; }
     document.getElementById('big-date').textContent = month + '월 ' + day + '일 토요일';
   }
 
-  function updateDuty(dutyName, confirmed) {
+  function updateDuty(dutyName, confirmed, nextDuty) {
     const el = document.getElementById('duty-name');
     const labelEl = document.querySelector('.duty-text');
+    const nextEl = document.getElementById('next-duty-line');
     if (dutyName) {
       el.textContent = dutyName;
       labelEl.textContent = confirmed
@@ -188,6 +190,13 @@ input[type="text"]:focus { border-color: #378add; }
     } else {
       el.textContent = '미정';
       labelEl.textContent = '이번주 조끼 세탁 당번';
+    }
+
+    if (nextDuty) {
+      nextEl.textContent = '다음 예상 당번: ' + nextDuty;
+      nextEl.style.display = 'block';
+    } else {
+      nextEl.style.display = 'none';
     }
   }
 
@@ -224,7 +233,7 @@ input[type="text"]:focus { border-color: #378add; }
       delete window[cb];
       document.getElementById('load-script') && document.getElementById('load-script').remove();
       renderMembers(data.records || []);
-      updateDuty(data.duty, data.dutyConfirmed);
+      updateDuty(data.duty, data.dutyConfirmed, data.nextDuty);
     };
     const script = document.createElement('script');
     script.id = 'load-script';
@@ -256,7 +265,7 @@ input[type="text"]:focus { border-color: #378add; }
         });
         document.getElementById('status-hint').textContent = '';
         loadAttendance();
-        updateDuty(result.duty, result.dutyConfirmed);
+        updateDuty(result.duty, result.dutyConfirmed, result.nextDuty);
         const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
         alert(name + '님 ' + statusText[result.status] + ' 등록 완료!');
       } else {
