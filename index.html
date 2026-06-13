@@ -175,12 +175,17 @@ input[type="text"]:focus { border-color: #378add; }
     document.getElementById('big-date').textContent = month + '월 ' + day + '일 토요일';
   }
 
-  function updateDuty(dutyName) {
+  function updateDuty(dutyName, confirmed) {
     const el = document.getElementById('duty-name');
+    const labelEl = document.querySelector('.duty-text');
     if (dutyName) {
       el.textContent = dutyName;
+      labelEl.textContent = confirmed
+        ? '이번주 조끼 세탁 당번'
+        : '이번주 조끼 세탁 당번 (예정 · 출석 시 확정)';
     } else {
       el.textContent = '미정';
+      labelEl.textContent = '이번주 조끼 세탁 당번';
     }
   }
 
@@ -217,12 +222,12 @@ input[type="text"]:focus { border-color: #378add; }
       delete window[cb];
       document.getElementById('load-script') && document.getElementById('load-script').remove();
       renderMembers(data.records || []);
-      updateDuty(data.duty);
+      updateDuty(data.duty, data.dutyConfirmed);
     };
     const script = document.createElement('script');
     script.id = 'load-script';
     script.src = PROXY_URL + '?action=getAttendance&date=' + saturdayDate + '&callback=' + cb;
-    script.onerror = function() { renderMembers([]); updateDuty(null); };
+    script.onerror = function() { renderMembers([]); updateDuty(null, false); };
     document.body.appendChild(script);
   }
 
@@ -249,7 +254,7 @@ input[type="text"]:focus { border-color: #378add; }
         });
         document.getElementById('status-hint').textContent = '';
         loadAttendance();
-        updateDuty(result.duty);
+        updateDuty(result.duty, result.dutyConfirmed);
         const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
         alert(name + '님 ' + statusText[result.status] + ' 등록 완료!');
       } else {
