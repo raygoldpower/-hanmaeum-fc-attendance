@@ -80,6 +80,10 @@ input[type="text"]:focus { border-color: #378add; }
 .team-member-name { font-size: 13px; font-weight: 500; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
+
+/* 💡 코치 전용 버튼 스타일 */
+.coach-apply-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #28a745; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.coach-apply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -126,6 +130,10 @@ input[type="text"]:focus { border-color: #378add; }
   <div class="team-card" id="team-card">
     <p class="section-title">⚽ 팀 배정</p>
     <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
+    <!-- 💡 코치모드 적용하기 버튼 영역 -->
+    <div id="coach-action-area" style="display:none;">
+      <button class="coach-apply-btn" id="coach-btn" onclick="applyTeamChanges()">팀 변경 적용하기</button>
+    </div>
   </div>
 
   <div class="card">
@@ -155,12 +163,13 @@ input[type="text"]:focus { border-color: #378add; }
 
 <script>
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
-  const COACH_PIN = '1234'; // 💡 코치모드 비밀번호 (원하는 번호로 변경 가능)
+  const COACH_PIN = '1234'; // 💡 비밀번호 (원하는 번호로 변경 가능)
 
   let selectedStatus = null;
   let saturdayDate = '';
   let currentTeamsData = [];
   let isCoachMode = false;
+  let pendingTeamChanges = {}; // 💡 변경할 내용 임시 저장용
 
   function getTargetSaturday() {
     const now = new Date();
@@ -225,14 +234,13 @@ input[type="text"]:focus { border-color: #378add; }
     });
   }
 
-  // 💡 비밀번호 확인 후 코치 모드 토글
   function toggleCoachMode() {
     const chk = document.getElementById('coach-mode-checkbox');
     if (chk.checked) {
       const pwd = prompt('코치 전용 비밀번호를 입력해 주세요:');
       if (pwd === COACH_PIN) {
         isCoachMode = true;
-        alert('코치 모드가 활성화되었습니다.');
+        alert('코치 모드가 활성화되었습니다. 팀을 변경한 후 [팀 변경 적용하기] 버튼을 눌러주세요.');
       } else {
         alert('비밀번호가 올바르지 않습니다.');
         chk.checked = false;
@@ -241,6 +249,7 @@ input[type="text"]:focus { border-color: #378add; }
     } else {
       isCoachMode = false;
     }
+    pendingTeamChanges = {};
     renderTeams(currentTeamsData);
   }
 
@@ -248,14 +257,17 @@ input[type="text"]:focus { border-color: #378add; }
     currentTeamsData = teams || [];
     const card = document.getElementById('team-card');
     const content = document.getElementById('team-content');
+    const actionArea = document.getElementById('coach-action-area');
 
     if (!teams || teams.length === 0) {
       card.classList.remove('visible');
       content.innerHTML = '<div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div>';
+      actionArea.style.display = 'none';
       return;
     }
 
     card.classList.add('visible');
+    actionArea.style.display = isCoachMode ? 'block' : 'none';
 
     const teamColors = { 'A': 'teamA', 'B': 'teamB', 'C': 'teamC', 'D': 'teamD' };
     const teamIcons = { 'A': '🔵', 'B': '🔴', 'C': '🟢', 'D': '🟡' };
@@ -273,9 +285,10 @@ input[type="text"]:focus { border-color: #378add; }
             memberHtml += '<span class="team-member-name">' + m + '</span>';
             
             if (isCoachMode) {
-              memberHtml += '<select class="team-select" onchange="changeMemberTeam(\'' + m + '\', this.value)">';
+              const currentSel = pendingTeamChanges[m] || team.name;
+              memberHtml += '<select class="team-select" onchange="trackTeamChange(\'' + m + '\', this.value)">';
               allTeamNames.forEach(tn => {
-                const sel = tn === team.name ? 'selected' : '';
+                const sel = tn === currentSel ? 'selected' : '';
                 memberHtml += '<option value="' + tn + '" ' + sel + '>' + tn + '팀</option>';
               });
               memberHtml += '</select>';
@@ -291,26 +304,64 @@ input[type="text"]:focus { border-color: #378add; }
       '</div>';
   }
 
-  function changeMemberTeam(memberName, newTeam) {
-    const cb = 'update_' + Date.now();
-    window[cb] = function(result) {
-      delete window[cb];
-      document.getElementById('update-script') && document.getElementById('update-script').remove();
-      if (result.success) {
-        loadAttendance();
-      } else {
-        alert(result.message || '팀 변경 실패');
-      }
-    };
-    const script = document.createElement('script');
-    script.id = 'update-script';
-    script.src = PROXY_URL + '?action=updateTeam' +
-      '&date=' + saturdayDate +
-      '&name=' + encodeURIComponent(memberName) +
-      '&newTeam=' + encodeURIComponent(newTeam) +
-      '&callback=' + cb;
-    script.onerror = function() { alert('팀 변경 중 오류가 발생했습니다.'); };
-    document.body.appendChild(script);
+  // 💡 드롭다운 변경 시 즉시 전송하지 않고 임시 객체에만 기록
+  function trackTeamChange(memberName, newTeam) {
+    pendingTeamChanges[memberName] = newTeam;
+  }
+
+  // 💡 [팀 변경 적용하기] 버튼 클릭 시 순차적으로 일괄 서버 반영
+  function applyTeamChanges() {
+    const membersToUpdate = Object.keys(pendingTeamChanges);
+    if (membersToUpdate.length === 0) {
+      alert('변경한 팀이 없습니다.');
+      return;
+    }
+
+    const btn = document.getElementById('coach-btn');
+    btn.disabled = true;
+    btn.textContent = '적용 중...';
+
+    let completed = 0;
+    const total = membersToUpdate.length;
+
+    membersToUpdate.forEach(name => {
+      const newTeam = pendingTeamChanges[name];
+      const cb = 'update_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+      
+      window[cb] = function(result) {
+        delete window[cb];
+        document.getElementById(cb + '_script') && document.getElementById(cb + '_script').remove();
+        completed++;
+        
+        if (completed === total) {
+          btn.disabled = false;
+          btn.textContent = '팀 변경 적용하기';
+          pendingTeamChanges = {};
+          alert('팀 변경이 성공적으로 적용되었습니다!');
+          loadAttendance(); // 전체 최신 상태 재조회
+        }
+      };
+
+      const script = document.createElement('script');
+      script.id = cb + '_script';
+      script.src = PROXY_URL + '?action=updateTeam' +
+        '&date=' + saturdayDate +
+        '&name=' + encodeURIComponent(name) +
+        '&newTeam=' + encodeURIComponent(newTeam) +
+        '&callback=' + cb;
+      
+      script.onerror = function() {
+        completed++;
+        if (completed === total) {
+          btn.disabled = false;
+          btn.textContent = '팀 변경 적용하기';
+          alert('일부 변경 처리 중 오류가 발생했습니다.');
+          loadAttendance();
+        }
+      };
+
+      document.body.appendChild(script);
+    });
   }
 
   function loadAttendance() {
