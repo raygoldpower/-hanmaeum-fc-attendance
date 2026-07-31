@@ -80,12 +80,9 @@ input[type="text"]:focus { border-color: #378add; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
 
-/* 코치 전용 조율 영역 */
-.coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px; margin-bottom: 12px; display: none; }
-.coach-panel-title { font-size: 12px; font-weight: bold; color: #185fa5; margin-bottom: 6px; text-align: center; }
-.mode-btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.mode-btn { padding: 10px 4px; font-size: 13px; font-weight: bold; border-radius: 8px; border: 1.5px solid #185fa5; background: #fff; color: #185fa5; cursor: pointer; text-align: center; }
-.mode-btn.active { background: #185fa5; color: #fff; }
+/* 💡 코치 안내 문구 영역 */
+.coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px; margin-bottom: 12px; display: none; text-align: center; }
+.coach-panel-title { font-size: 12px; font-weight: bold; color: #185fa5; }
 
 .coach-apply-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #28a745; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .coach-apply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -135,18 +132,14 @@ input[type="text"]:focus { border-color: #378add; }
   <div class="team-card" id="team-card">
     <p class="section-title">⚽ 팀 배정</p>
 
-    <!-- 코치 모드 패널 -->
+    <!-- 💡 코치 모드 안내 문구 -->
     <div class="coach-panel" id="coach-panel">
-      <div class="coach-panel-title">⚽ 팀 구성 모드 선택 (A, B, C, D팀 자유 선택)</div>
-      <div class="mode-btn-grid">
-        <button class="mode-btn" id="mbtn-55" onclick="setTeamMode(5)">5 : 5 팀 설정</button>
-        <button class="mode-btn" id="mbtn-66" onclick="setTeamMode(6)">6 : 6 팀 설정</button>
-      </div>
+      <div class="coach-panel-title">⚽ 코치 수동 변경 모드 (드롭다운으로 이동 후 하단 적용 버튼 클릭)</div>
     </div>
 
     <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
 
-    <!-- 코치모드 적용하기 버튼 -->
+    <!-- 💡 코치모드 적용하기 버튼 -->
     <div id="coach-action-area" style="display:none;">
       <button class="coach-apply-btn" id="coach-btn" onclick="applyTeamChanges()">팀 변경 적용하기</button>
     </div>
@@ -256,7 +249,7 @@ input[type="text"]:focus { border-color: #378add; }
       const pwd = prompt('코치 전용 비밀번호를 입력해 주세요:');
       if (pwd === COACH_PIN) {
         isCoachMode = true;
-        alert('코치 모드가 활성화되었습니다.');
+        alert('코치 모드가 활성화되었습니다. 팀원을 이동시킨 후 [팀 변경 적용하기]를 눌러주세요.');
       } else {
         alert('비밀번호가 올바르지 않습니다.');
         chk.checked = false;
@@ -267,44 +260,6 @@ input[type="text"]:focus { border-color: #378add; }
     }
     pendingTeamChanges = {};
     renderTeams(currentTeamsData);
-  }
-
-  function setTeamMode(maxPerTeam) {
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    if (maxPerTeam === 5) document.getElementById('mbtn-55').classList.add('active');
-    if (maxPerTeam === 6) document.getElementById('mbtn-66').classList.add('active');
-
-    const targetTeamNames = ['A', 'B'];
-    const teamMap = { 'A': [], 'B': [] };
-    const overflowMembers = [];
-
-    currentTeamsData.forEach(t => {
-      t.members.forEach(m => {
-        const assignedTeam = pendingTeamChanges[m] || t.name;
-        if (targetTeamNames.includes(assignedTeam)) {
-          teamMap[assignedTeam].push(m);
-        } else {
-          overflowMembers.push(m);
-        }
-      });
-    });
-
-    overflowMembers.forEach(m => {
-      let targetTeam = 'A';
-      if (teamMap['A'].length >= maxPerTeam && teamMap['B'].length < maxPerTeam) {
-        targetTeam = 'B';
-      } else if (teamMap['A'].length > teamMap['B'].length) {
-        targetTeam = 'B';
-      }
-      teamMap[targetTeam].push(m);
-      pendingTeamChanges[m] = targetTeam;
-    });
-
-    const newTeams = [
-      { name: 'A', members: teamMap['A'] },
-      { name: 'B', members: teamMap['B'] }
-    ];
-    renderTeams(newTeams);
   }
 
   function renderTeams(teams) {
@@ -329,7 +284,7 @@ input[type="text"]:focus { border-color: #378add; }
     const teamColors = { 'A': 'teamA', 'B': 'teamB', 'C': 'teamC', 'D': 'teamD' };
     const teamIcons = { 'A': '🔵', 'B': '🔴', 'C': '🟢', 'D': '🟡' };
     
-    // 💡 핵심 수정: 인원수나 배치 상황과 상관없이 드롭다운에는 A, B, C, D팀 선택지가 전부 표시됨!
+    // 선택 가능한 모든 팀
     const allSelectableTeams = ['A', 'B', 'C', 'D'];
 
     content.innerHTML = '<div class="team-grid">' +
