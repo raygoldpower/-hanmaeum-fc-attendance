@@ -71,6 +71,8 @@ input[type="text"]:focus { border-color: #378add; }
 .team-box { border-radius: 10px; padding: 12px; }
 .team-box.teamA { background: #1a3a6b; color: #fff; }
 .team-box.teamB { background: #7b1a1a; color: #fff; }
+.team-box.teamC { background: #1a5c1a; color: #fff; }
+.team-box.teamD { background: #5c4a1a; color: #fff; }
 .team-name { font-size: 14px; font-weight: 700; margin-bottom: 8px; text-align: center; }
 .team-members { display: flex; flex-direction: column; gap: 6px; }
 .team-member-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 6px; }
@@ -78,7 +80,7 @@ input[type="text"]:focus { border-color: #378add; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
 
-/* 💡 코치 전용 조율 영역 (5:5 / 6:6 전용) */
+/* 코치 전용 조율 영역 */
 .coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px; margin-bottom: 12px; display: none; }
 .coach-panel-title { font-size: 12px; font-weight: bold; color: #185fa5; margin-bottom: 6px; text-align: center; }
 .mode-btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -133,9 +135,9 @@ input[type="text"]:focus { border-color: #378add; }
   <div class="team-card" id="team-card">
     <p class="section-title">⚽ 팀 배정</p>
 
-    <!-- 💡 5:5 / 6:6 모드 설정 패널 -->
+    <!-- 코치 모드 패널 -->
     <div class="coach-panel" id="coach-panel">
-      <div class="coach-panel-title">⚽ 팀 구성 모드 선택 (A, B팀 자율 분배)</div>
+      <div class="coach-panel-title">⚽ 팀 구성 모드 선택 (A, B, C, D팀 자유 선택)</div>
       <div class="mode-btn-grid">
         <button class="mode-btn" id="mbtn-55" onclick="setTeamMode(5)">5 : 5 팀 설정</button>
         <button class="mode-btn" id="mbtn-66" onclick="setTeamMode(6)">6 : 6 팀 설정</button>
@@ -144,7 +146,7 @@ input[type="text"]:focus { border-color: #378add; }
 
     <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
 
-    <!-- 💡 코치모드 적용하기 버튼 -->
+    <!-- 코치모드 적용하기 버튼 -->
     <div id="coach-action-area" style="display:none;">
       <button class="coach-apply-btn" id="coach-btn" onclick="applyTeamChanges()">팀 변경 적용하기</button>
     </div>
@@ -267,7 +269,6 @@ input[type="text"]:focus { border-color: #378add; }
     renderTeams(currentTeamsData);
   }
 
-  // 💡 5:5 / 6:6 모드 버튼 클릭 시 처리
   function setTeamMode(maxPerTeam) {
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
     if (maxPerTeam === 5) document.getElementById('mbtn-55').classList.add('active');
@@ -277,7 +278,6 @@ input[type="text"]:focus { border-color: #378add; }
     const teamMap = { 'A': [], 'B': [] };
     const overflowMembers = [];
 
-    // 기존 멤버들을 A팀, B팀에 유지
     currentTeamsData.forEach(t => {
       t.members.forEach(m => {
         const assignedTeam = pendingTeamChanges[m] || t.name;
@@ -289,7 +289,6 @@ input[type="text"]:focus { border-color: #378add; }
       });
     });
 
-    // 넘친 인원은 자리가 남는 팀에 균등 배치
     overflowMembers.forEach(m => {
       let targetTeam = 'A';
       if (teamMap['A'].length >= maxPerTeam && teamMap['B'].length < maxPerTeam) {
@@ -327,9 +326,11 @@ input[type="text"]:focus { border-color: #378add; }
     actionArea.style.display = isCoachMode ? 'block' : 'none';
     coachPanel.style.display = isCoachMode ? 'block' : 'none';
 
-    const teamColors = { 'A': 'teamA', 'B': 'teamB' };
-    const teamIcons = { 'A': '🔵', 'B': '🔴' };
-    const availableTeamNames = ['A', 'B'];
+    const teamColors = { 'A': 'teamA', 'B': 'teamB', 'C': 'teamC', 'D': 'teamD' };
+    const teamIcons = { 'A': '🔵', 'B': '🔴', 'C': '🟢', 'D': '🟡' };
+    
+    // 💡 핵심 수정: 인원수나 배치 상황과 상관없이 드롭다운에는 A, B, C, D팀 선택지가 전부 표시됨!
+    const allSelectableTeams = ['A', 'B', 'C', 'D'];
 
     content.innerHTML = '<div class="team-grid">' +
       teams.map(team => {
@@ -345,7 +346,7 @@ input[type="text"]:focus { border-color: #378add; }
             if (isCoachMode) {
               const currentSel = pendingTeamChanges[m] || team.name;
               memberHtml += '<select class="team-select" onchange="trackTeamChange(\'' + m + '\', this.value)">';
-              availableTeamNames.forEach(tn => {
+              allSelectableTeams.forEach(tn => {
                 const sel = tn === currentSel ? 'selected' : '';
                 memberHtml += '<option value="' + tn + '" ' + sel + '>' + tn + '팀</option>';
               });
