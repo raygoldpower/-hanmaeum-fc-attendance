@@ -9,10 +9,13 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #111; min-height: 100vh; padding: 1.5rem 1rem 3rem; }
 .wrap { max-width: 480px; margin: 0 auto; }
 
-.title-card { background: linear-gradient(135deg, #185fa5, #2b7fd6); border-radius: 16px; padding: 1.75rem 1.25rem; margin-bottom: 1rem; text-align: center; color: #fff; }
+.title-card { background: linear-gradient(135deg, #185fa5, #2b7fd6); border-radius: 16px; padding: 1.75rem 1.25rem; margin-bottom: 1rem; text-align: center; color: #fff; position: relative; }
 .club-name { font-size: 13px; opacity: 0.85; margin-bottom: 8px; letter-spacing: 0.05em; }
 .big-date { font-size: 34px; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
 .sub-info { font-size: 15px; opacity: 0.95; font-weight: 500; }
+
+/* 상단 코치 모드 토글 */
+.coach-header-toggle { position: absolute; top: 12px; right: 12px; font-size: 11px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
 .duty-card { background: #fff7e6; border: 1.5px solid #ffd580; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; }
 .duty-icon { font-size: 28px; }
@@ -77,15 +80,15 @@ input[type="text"]:focus { border-color: #378add; }
 .team-member-name { font-size: 13px; font-weight: 500; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
-
-/* 코치 모드 토글 스위치 */
-.coach-toggle { font-size: 12px; font-weight: bold; color: #185fa5; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="title-card">
+    <label class="coach-header-toggle">
+      <input type="checkbox" id="coach-mode-checkbox" onchange="toggleCoachMode()"> ⚽ 코치모드
+    </label>
     <div class="club-name">⚽ 한마음 FC</div>
     <div class="big-date" id="big-date">6월 13일 토요일</div>
     <div class="sub-info">저녁 7시 풋살 출석체크</div>
@@ -119,14 +122,9 @@ input[type="text"]:focus { border-color: #378add; }
     <p class="hint" id="status-hint"></p>
   </div>
 
-  <!-- 팀배정 카드 (코치 모드 스위치 포함) -->
+  <!-- 팀배정 카드 -->
   <div class="team-card" id="team-card">
-    <div class="section-title">
-      <span>⚽ 팀 배정</span>
-      <label class="coach-toggle">
-        <input type="checkbox" id="coach-mode-checkbox" onchange="toggleCoachMode()"> 코치 모드
-      </label>
-    </div>
+    <p class="section-title">⚽ 팀 배정</p>
     <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
   </div>
 
@@ -157,6 +155,8 @@ input[type="text"]:focus { border-color: #378add; }
 
 <script>
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
+  const COACH_PIN = '1234'; // 💡 코치모드 비밀번호 (원하는 번호로 변경 가능)
+
   let selectedStatus = null;
   let saturdayDate = '';
   let currentTeamsData = [];
@@ -225,13 +225,25 @@ input[type="text"]:focus { border-color: #378add; }
     });
   }
 
-  // 코치 모드 토글
+  // 💡 비밀번호 확인 후 코치 모드 토글
   function toggleCoachMode() {
-    isCoachMode = document.getElementById('coach-mode-checkbox').checked;
+    const chk = document.getElementById('coach-mode-checkbox');
+    if (chk.checked) {
+      const pwd = prompt('코치 전용 비밀번호를 입력해 주세요:');
+      if (pwd === COACH_PIN) {
+        isCoachMode = true;
+        alert('코치 모드가 활성화되었습니다.');
+      } else {
+        alert('비밀번호가 올바르지 않습니다.');
+        chk.checked = false;
+        isCoachMode = false;
+      }
+    } else {
+      isCoachMode = false;
+    }
     renderTeams(currentTeamsData);
   }
 
-  // 팀 배정 화면 렌더링 (코치 모드 대응)
   function renderTeams(teams) {
     currentTeamsData = teams || [];
     const card = document.getElementById('team-card');
@@ -260,7 +272,6 @@ input[type="text"]:focus { border-color: #378add; }
             let memberHtml = '<div class="team-member-item">';
             memberHtml += '<span class="team-member-name">' + m + '</span>';
             
-            // 코치 모드일 때만 팀 이동 드롭다운 표시
             if (isCoachMode) {
               memberHtml += '<select class="team-select" onchange="changeMemberTeam(\'' + m + '\', this.value)">';
               allTeamNames.forEach(tn => {
@@ -280,14 +291,13 @@ input[type="text"]:focus { border-color: #378add; }
       '</div>';
   }
 
-  // 코치 모드: 팀 변경 통신
   function changeMemberTeam(memberName, newTeam) {
     const cb = 'update_' + Date.now();
     window[cb] = function(result) {
       delete window[cb];
       document.getElementById('update-script') && document.getElementById('update-script').remove();
       if (result.success) {
-        loadAttendance(); // 바뀐 팀 상태 재조회
+        loadAttendance();
       } else {
         alert(result.message || '팀 변경 실패');
       }
