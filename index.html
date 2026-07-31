@@ -18,8 +18,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .duty-icon { font-size: 28px; }
 .duty-text { font-size: 13px; color: #a06a00; font-weight: 600; margin-bottom: 2px; }
 .duty-name { font-size: 19px; font-weight: 700; color: #663c00; }
-.duty-name .swap-note { font-size: 12px; font-weight: 500; color: #a06a00; margin-left: 6px; }
 .duty-desc { font-size: 11px; color: #b8860b; margin-top: 4px; line-height: 1.5; }
+
 .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
 .section-title { font-size: 13px; font-weight: 600; color: #444; letter-spacing: 0.02em; margin-bottom: 1rem; display: flex; align-items: center; gap: 6px; }
 
@@ -30,14 +30,12 @@ input[type="text"]:focus { border-color: #378add; }
 
 .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .status-btn { border: 1.5px solid #ddd; border-radius: 10px; padding: 16px 4px; font-size: 15px; font-weight: 600; text-align: center; cursor: pointer; background: #fff; color: #111; transition: all 0.15s; user-select: none; }
-.status-btn:hover { background: #f5f5f5; }
 .status-btn .icon { font-size: 24px; display: block; margin-bottom: 6px; }
 .status-btn.sel-attend { background: #eaf3de; color: #3b6d11; border-color: #97c459; }
 .status-btn.sel-absent { background: #fcebeb; color: #a32d2d; border-color: #f09595; }
 .status-btn.sel-undecided { background: #faeeda; color: #854f0b; border-color: #ef9f27; }
 
 .submit-btn { width: 100%; padding: 16px; border-radius: 10px; border: none; background: #185fa5; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 1rem; transition: opacity 0.15s; }
-.submit-btn:hover { opacity: 0.88; }
 .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .hint { font-size: 12px; color: #999; margin-top: 8px; text-align: center; }
 
@@ -62,6 +60,24 @@ input[type="text"]:focus { border-color: #378add; }
 .member-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; }
 .member-chip { font-size: 13px; padding: 5px 12px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #111; font-weight: 500; }
 .empty-msg { font-size: 13px; color: #ccc; padding-top: 2px; }
+
+/* 팀배정 */
+.team-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: none; }
+.team-card.visible { display: block; }
+.team-waiting { font-size: 13px; color: #999; text-align: center; padding: 1rem 0; }
+.team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 0.5rem; }
+.team-box { border-radius: 10px; padding: 12px; }
+.team-box.black { background: #1a1a1a; color: #fff; }
+.team-box.white { background: #f5f5f5; color: #111; border: 1.5px solid #ddd; }
+.team-box.teamA { background: #1a3a6b; color: #fff; }
+.team-box.teamB { background: #7b1a1a; color: #fff; }
+.team-box.teamC { background: #1a5c1a; color: #fff; }
+.team-box.teamD { background: #5c4a1a; color: #fff; }
+.team-name { font-size: 14px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+.team-members { display: flex; flex-wrap: wrap; gap: 4px; }
+.team-member { font-size: 12px; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.2); font-weight: 500; }
+.team-box.white .team-member { background: rgba(0,0,0,0.08); }
+.team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -92,36 +108,27 @@ input[type="text"]:focus { border-color: #378add; }
     <div>
       <label>출석 여부 <span class="required">*</span></label>
       <div class="status-grid">
-        <div class="status-btn" id="btn-attend" onclick="selectStatus('attend')">
-          <span class="icon">✓</span>출석
-        </div>
-        <div class="status-btn" id="btn-absent" onclick="selectStatus('absent')">
-          <span class="icon">✗</span>불참
-        </div>
-        <div class="status-btn" id="btn-undecided" onclick="selectStatus('undecided')">
-          <span class="icon">?</span>미정
-        </div>
+        <div class="status-btn" id="btn-attend" onclick="selectStatus('attend')"><span class="icon">✓</span>출석</div>
+        <div class="status-btn" id="btn-absent" onclick="selectStatus('absent')"><span class="icon">✗</span>불참</div>
+        <div class="status-btn" id="btn-undecided" onclick="selectStatus('undecided')"><span class="icon">?</span>미정</div>
       </div>
     </div>
     <button class="submit-btn" id="submit-btn" onclick="submitForm()">제출하기</button>
     <p class="hint" id="status-hint"></p>
   </div>
 
+  <!-- 팀배정 카드 -->
+  <div class="team-card" id="team-card">
+    <p class="section-title">⚽ 팀 배정</p>
+    <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
+  </div>
+
   <div class="card">
     <p class="section-title">📊 출석 현황</p>
     <div class="count-grid">
-      <div class="count-card cc-attend">
-        <div class="count-num cnt-attend" id="cnt-attend">-</div>
-        <div class="count-label cnt-attend">출석</div>
-      </div>
-      <div class="count-card cc-absent">
-        <div class="count-num cnt-absent" id="cnt-absent">-</div>
-        <div class="count-label cnt-absent">불참</div>
-      </div>
-      <div class="count-card cc-undecided">
-        <div class="count-num cnt-undecided" id="cnt-undecided">-</div>
-        <div class="count-label cnt-undecided">미정</div>
-      </div>
+      <div class="count-card cc-attend"><div class="count-num cnt-attend" id="cnt-attend">-</div><div class="count-label cnt-attend">출석</div></div>
+      <div class="count-card cc-absent"><div class="count-num cnt-absent" id="cnt-absent">-</div><div class="count-label cnt-absent">불참</div></div>
+      <div class="count-card cc-undecided"><div class="count-num cnt-undecided" id="cnt-undecided">-</div><div class="count-label cnt-undecided">미정</div></div>
     </div>
     <div class="member-group">
       <span class="group-label lbl-attend">✓ 출석</span>
@@ -145,19 +152,14 @@ input[type="text"]:focus { border-color: #378add; }
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
   let selectedStatus = null;
   let saturdayDate = '';
+
   function getTargetSaturday() {
     const now = new Date();
-    const day = now.getDay(); // 0=일, 1=월 ... 6=토
-
+    const day = now.getDay();
     let diff;
-    if (day === 0) {
-      diff = -1; // 일요일 -> 어제(지난 토요일)
-    } else if (day === 6) {
-      diff = 0;  // 토요일 -> 오늘
-    } else {
-      diff = 6 - day; // 월~금 -> 이번주 토요일
-    }
-
+    if (day === 0) diff = -1;
+    else if (day === 6) diff = 0;
+    else diff = 6 - day;
     const sat = new Date(now);
     sat.setDate(now.getDate() + diff);
     return sat;
@@ -184,27 +186,18 @@ input[type="text"]:focus { border-color: #378add; }
     const nextEl = document.getElementById('next-duty-line');
     if (dutyName) {
       el.textContent = dutyName;
-      labelEl.textContent = confirmed
-        ? '이번주 조끼 세탁 당번'
-        : '이번주 조끼 세탁 당번 (예정 · 출석 시 확정)';
+      labelEl.textContent = confirmed ? '이번주 조끼 세탁 당번' : '이번주 조끼 세탁 당번 (예정 · 출석 시 확정)';
     } else {
       el.textContent = '미정';
       labelEl.textContent = '이번주 조끼 세탁 당번';
     }
-
-    if (nextDuty) {
-      nextEl.textContent = '다음 예상 당번: ' + nextDuty;
-      nextEl.style.display = 'block';
-    } else {
-      nextEl.style.display = 'none';
-    }
+    if (nextDuty) { nextEl.textContent = '다음 예상 당번: ' + nextDuty; nextEl.style.display = 'block'; }
+    else nextEl.style.display = 'none';
   }
 
   function selectStatus(status) {
     selectedStatus = status;
-    ['attend','absent','undecided'].forEach(s => {
-      document.getElementById('btn-' + s).className = 'status-btn';
-    });
+    ['attend','absent','undecided'].forEach(s => { document.getElementById('btn-' + s).className = 'status-btn'; });
     const cls = { attend: 'sel-attend', absent: 'sel-absent', undecided: 'sel-undecided' };
     const hints = { attend: '출석으로 등록됩니다.', absent: '불참으로 등록됩니다.', undecided: '미정으로 등록됩니다.' };
     document.getElementById('btn-' + status).className = 'status-btn ' + cls[status];
@@ -213,18 +206,51 @@ input[type="text"]:focus { border-color: #378add; }
 
   function renderMembers(data) {
     const groups = { attend: [], absent: [], undecided: [] };
-    (data || []).forEach(row => {
-      if (groups[row.status]) groups[row.status].push(row.name);
-    });
+    (data || []).forEach(row => { if (groups[row.status]) groups[row.status].push(row.name); });
     ['attend','absent','undecided'].forEach(s => {
       document.getElementById('cnt-' + s).textContent = groups[s].length;
       const list = document.getElementById('list-' + s);
-      if (groups[s].length === 0) {
-        list.innerHTML = '<span class="empty-msg">아직 없습니다</span>';
-      } else {
-        list.innerHTML = groups[s].map(n => '<span class="member-chip">' + n + '</span>').join('');
-      }
+      list.innerHTML = groups[s].length === 0
+        ? '<span class="empty-msg">아직 없습니다</span>'
+        : groups[s].map(n => '<span class="member-chip">' + n + '</span>').join('');
     });
+  }
+
+  function renderTeams(teams) {
+    const card = document.getElementById('team-card');
+    const content = document.getElementById('team-content');
+
+    if (!teams || teams.length === 0) {
+      card.classList.remove('visible');
+      content.innerHTML = '<div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div>';
+      return;
+    }
+
+    card.classList.add('visible');
+
+    const teamColors = {
+      '블랙': 'black', '화이트': 'white',
+      'A': 'teamA', 'B': 'teamB', 'C': 'teamC', 'D': 'teamD'
+    };
+
+    const teamIcons = {
+      '블랙': '⚫', '화이트': '⚪',
+      'A': '🔵', 'B': '🔴', 'C': '🟢', 'D': '🟡'
+    };
+
+    content.innerHTML = '<div class="team-grid">' +
+      teams.map(team => {
+        const colorClass = teamColors[team.name] || 'teamA';
+        const icon = teamIcons[team.name] || '⚽';
+        return '<div class="team-box ' + colorClass + '">' +
+          '<div class="team-name">' + icon + ' ' + team.name + '팀</div>' +
+          '<div class="team-members">' +
+          team.members.map(m => '<span class="team-member">' + m + '</span>').join('') +
+          '</div>' +
+          '<div class="team-count">' + team.members.length + '명</div>' +
+          '</div>';
+      }).join('') +
+      '</div>';
   }
 
   function loadAttendance() {
@@ -234,6 +260,7 @@ input[type="text"]:focus { border-color: #378add; }
       document.getElementById('load-script') && document.getElementById('load-script').remove();
       renderMembers(data.records || []);
       updateDuty(data.duty, data.dutyConfirmed, data.nextDuty);
+      renderTeams(data.teams);
     };
     const script = document.createElement('script');
     script.id = 'load-script';
@@ -260,10 +287,9 @@ input[type="text"]:focus { border-color: #378add; }
       if (result.success) {
         document.getElementById('name').value = '';
         selectedStatus = null;
-        ['attend','absent','undecided'].forEach(s => {
-          document.getElementById('btn-' + s).className = 'status-btn';
-        });
+        ['attend','absent','undecided'].forEach(s => { document.getElementById('btn-' + s).className = 'status-btn'; });
         document.getElementById('status-hint').textContent = '';
+        renderTeams(result.teams);
         loadAttendance();
         updateDuty(result.duty, result.dutyConfirmed, result.nextDuty);
         const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
