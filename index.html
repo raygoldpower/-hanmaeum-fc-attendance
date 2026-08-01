@@ -80,9 +80,12 @@ input[type="text"]:focus { border-color: #378add; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
 
-/* 💡 코치 안내 문구 영역 */
-.coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px; margin-bottom: 12px; display: none; text-align: center; }
-.coach-panel-title { font-size: 12px; font-weight: bold; color: #185fa5; }
+/* 코치 제어 패널 및 공개/숨김 버튼 */
+.coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; display: none; }
+.coach-panel-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.public-toggle-btn { font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; color: #fff; white-space: nowrap; }
+.public-toggle-btn.is-public { background: #28a745; }
+.public-toggle-btn.is-hidden { background: #dc3545; }
 
 .coach-apply-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #28a745; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .coach-apply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -132,14 +135,17 @@ input[type="text"]:focus { border-color: #378add; }
   <div class="team-card" id="team-card">
     <p class="section-title">⚽ 팀 배정</p>
 
-    <!-- 💡 코치 모드 안내 문구 -->
+    <!-- 코치 모드 상단 제어 패널 (공개/숨김 버튼 포함) -->
     <div class="coach-panel" id="coach-panel">
-      <div class="coach-panel-title">⚽ 코치 수동 변경 모드 (드롭다운으로 이동 후 하단 적용 버튼 클릭)</div>
+      <div class="coach-panel-row">
+        <span style="font-size: 11px; font-weight: bold; color: #185fa5;">⚽ 팀 수동 조율 중</span>
+        <button class="public-toggle-btn" id="public-btn" onclick="togglePublicStatus()">👁️ 공개 상태</button>
+      </div>
     </div>
 
     <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
 
-    <!-- 💡 코치모드 적용하기 버튼 -->
+    <!-- 코치모드 적용하기 버튼 -->
     <div id="coach-action-area" style="display:none;">
       <button class="coach-apply-btn" id="coach-btn" onclick="applyTeamChanges()">팀 변경 적용하기</button>
     </div>
@@ -172,12 +178,13 @@ input[type="text"]:focus { border-color: #378add; }
 
 <script>
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
-  const COACH_PIN = '1234'; // 코치모드 비밀번호
+  const COACH_PIN = '1234'; // 코치모드 비밀번호 (필요시 변경 가능)
 
   let selectedStatus = null;
   let saturdayDate = '';
   let currentTeamsData = [];
   let isCoachMode = false;
+  let isTeamPublic = true;
   let pendingTeamChanges = {};
 
   function getTargetSaturday() {
@@ -249,7 +256,7 @@ input[type="text"]:focus { border-color: #378add; }
       const pwd = prompt('코치 전용 비밀번호를 입력해 주세요:');
       if (pwd === COACH_PIN) {
         isCoachMode = true;
-        alert('코치 모드가 활성화되었습니다. 팀원을 이동시킨 후 [팀 변경 적용하기]를 눌러주세요.');
+        alert('코치 모드가 활성화되었습니다.');
       } else {
         alert('비밀번호가 올바르지 않습니다.');
         chk.checked = false;
@@ -262,12 +269,36 @@ input[type="text"]:focus { border-color: #378add; }
     renderTeams(currentTeamsData);
   }
 
+  function togglePublicStatus() {
+    const nextStatus = !isTeamPublic;
+    const cb = 'pub_' + Date.now();
+    
+    window[cb] = function(res) {
+      delete window[cb];
+      document.getElementById(cb + '_script') && document.getElementById(cb + '_script').remove();
+      if (res.success) {
+        isTeamPublic = res.teamPublic;
+        alert(isTeamPublic ? '팀 배정이 회원들에게 [공개] 상태로 변경되었습니다.' : '팀 배정이 [숨김] 상태로 변경되었습니다.');
+        renderTeams(currentTeamsData);
+      }
+    };
+
+    const script = document.createElement('script');
+    script.id = cb + '_script';
+    script.src = PROXY_URL + '?action=toggleTeamPublic' +
+      '&date=' + saturdayDate +
+      '&public=' + nextStatus +
+      '&callback=' + cb;
+    document.body.appendChild(script);
+  }
+
   function renderTeams(teams) {
     currentTeamsData = teams || [];
     const card = document.getElementById('team-card');
     const content = document.getElementById('team-content');
     const actionArea = document.getElementById('coach-action-area');
     const coachPanel = document.getElementById('coach-panel');
+    const publicBtn = document.getElementById('public-btn');
 
     if (!teams || teams.length === 0) {
       card.classList.remove('visible');
@@ -281,10 +312,23 @@ input[type="text"]:focus { border-color: #378add; }
     actionArea.style.display = isCoachMode ? 'block' : 'none';
     coachPanel.style.display = isCoachMode ? 'block' : 'none';
 
+    if (publicBtn) {
+      if (isTeamPublic) {
+        publicBtn.textContent = '👁️ 공개 상태 (누르면 숨김)';
+        publicBtn.className = 'public-toggle-btn is-public';
+      } else {
+        publicBtn.textContent = '🙈 숨김 상태 (누르면 공개)';
+        publicBtn.className = 'public-toggle-btn is-hidden';
+      }
+    }
+
+    if (!isCoachMode && !isTeamPublic) {
+      content.innerHTML = '<div class="team-waiting" style="color:#185fa5; font-weight:bold; padding: 2rem 0;">🔒 코치진이 팀 배정을 조율 중입니다.<br>잠시만 기다려주세요!</div>';
+      return;
+    }
+
     const teamColors = { 'A': 'teamA', 'B': 'teamB', 'C': 'teamC', 'D': 'teamD' };
     const teamIcons = { 'A': '🔵', 'B': '🔴', 'C': '🟢', 'D': '🟡' };
-    
-    // 선택 가능한 모든 팀
     const allSelectableTeams = ['A', 'B', 'C', 'D'];
 
     content.innerHTML = '<div class="team-grid">' +
@@ -383,6 +427,7 @@ input[type="text"]:focus { border-color: #378add; }
       document.getElementById('load-script') && document.getElementById('load-script').remove();
       renderMembers(data.records || []);
       updateDuty(data.duty, data.dutyConfirmed, data.nextDuty);
+      isTeamPublic = data.teamPublic !== undefined ? data.teamPublic : true;
       renderTeams(data.teams);
     };
     const script = document.createElement('script');
@@ -412,6 +457,7 @@ input[type="text"]:focus { border-color: #378add; }
         selectedStatus = null;
         ['attend','absent','undecided'].forEach(s => { document.getElementById('btn-' + s).className = 'status-btn'; });
         document.getElementById('status-hint').textContent = '';
+        isTeamPublic = result.teamPublic !== undefined ? result.teamPublic : true;
         renderTeams(result.teams);
         loadAttendance();
         updateDuty(result.duty, result.dutyConfirmed, result.nextDuty);
