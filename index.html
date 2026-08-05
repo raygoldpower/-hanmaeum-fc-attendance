@@ -63,9 +63,8 @@ input[type="text"]:focus { border-color: #378add; }
 .member-chip { font-size: 13px; padding: 5px 12px; border-radius: 20px; border: 1px solid #e0e0e0; background: #fff; color: #111; font-weight: 500; }
 .empty-msg { font-size: 13px; color: #ccc; padding-top: 2px; }
 
-/* 팀배정 CSS */
-.team-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: none; }
-.team-card.visible { display: block; }
+/* 💡 인원수 제한 없이 항상 노출 가능하도록 기본 상시 표시 */
+.team-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: block; }
 .team-waiting { font-size: 13px; color: #999; text-align: center; padding: 1rem 0; }
 .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 0.5rem; }
 .team-box { border-radius: 10px; padding: 12px; }
@@ -80,10 +79,9 @@ input[type="text"]:focus { border-color: #378add; }
 .team-select { font-size: 11px; padding: 2px 4px; border-radius: 4px; border: none; background: #fff; color: #111; font-weight: 600; cursor: pointer; }
 .team-count { font-size: 11px; opacity: 0.75; text-align: center; margin-top: 8px; }
 
-/* 코치 제어 패널 및 공개/숨김 버튼 */
 .coach-panel { background: #f0f4f8; border: 1px dashed #185fa5; border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; display: none; }
 .coach-panel-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.public-toggle-btn { font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; color: #fff; white-space: nowrap; }
+.public-toggle-btn { font-size: 12px; font-weight: bold; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; color: #fff; white-space: nowrap; }
 .public-toggle-btn.is-public { background: #28a745; }
 .public-toggle-btn.is-hidden { background: #dc3545; }
 
@@ -131,11 +129,10 @@ input[type="text"]:focus { border-color: #378add; }
     <p class="hint" id="status-hint"></p>
   </div>
 
-  <!-- 팀배정 카드 -->
+  <!-- 팀배정 카드 상시 표시 -->
   <div class="team-card" id="team-card">
     <p class="section-title">⚽ 팀 배정</p>
 
-    <!-- 코치 모드 상단 제어 패널 (공개/숨김 버튼 포함) -->
     <div class="coach-panel" id="coach-panel">
       <div class="coach-panel-row">
         <span style="font-size: 11px; font-weight: bold; color: #185fa5;">⚽ 팀 수동 조율 중</span>
@@ -143,9 +140,8 @@ input[type="text"]:focus { border-color: #378add; }
       </div>
     </div>
 
-    <div id="team-content"><div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div></div>
+    <div id="team-content"><div class="team-waiting">출석 인원이 등록되면 팀이 배정됩니다</div></div>
 
-    <!-- 코치모드 적용하기 버튼 -->
     <div id="coach-action-area" style="display:none;">
       <button class="coach-apply-btn" id="coach-btn" onclick="applyTeamChanges()">팀 변경 적용하기</button>
     </div>
@@ -178,7 +174,7 @@ input[type="text"]:focus { border-color: #378add; }
 
 <script>
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
-  const COACH_PIN = '1234'; // 코치모드 비밀번호 (필요시 변경 가능)
+  const COACH_PIN = '1234';
 
   let selectedStatus = null;
   let saturdayDate = '';
@@ -186,6 +182,7 @@ input[type="text"]:focus { border-color: #378add; }
   let isCoachMode = false;
   let isTeamPublic = true;
   let pendingTeamChanges = {};
+  let currentAttendanceRecords = [];
 
   function getTargetSaturday() {
     const now = new Date();
@@ -239,8 +236,9 @@ input[type="text"]:focus { border-color: #378add; }
   }
 
   function renderMembers(data) {
+    currentAttendanceRecords = data || [];
     const groups = { attend: [], absent: [], undecided: [] };
-    (data || []).forEach(row => { if (groups[row.status]) groups[row.status].push(row.name); });
+    currentAttendanceRecords.forEach(row => { if (groups[row.status]) groups[row.status].push(row.name); });
     ['attend','absent','undecided'].forEach(s => {
       document.getElementById('cnt-' + s).textContent = groups[s].length;
       const list = document.getElementById('list-' + s);
@@ -271,16 +269,13 @@ input[type="text"]:focus { border-color: #378add; }
 
   function togglePublicStatus() {
     const nextStatus = !isTeamPublic;
+    isTeamPublic = nextStatus;
+    renderTeams(currentTeamsData);
+
     const cb = 'pub_' + Date.now();
-    
-    window[cb] = function(res) {
+    window[cb] = function() {
       delete window[cb];
       document.getElementById(cb + '_script') && document.getElementById(cb + '_script').remove();
-      if (res.success) {
-        isTeamPublic = res.teamPublic;
-        alert(isTeamPublic ? '팀 배정이 회원들에게 [공개] 상태로 변경되었습니다.' : '팀 배정이 [숨김] 상태로 변경되었습니다.');
-        renderTeams(currentTeamsData);
-      }
     };
 
     const script = document.createElement('script');
@@ -294,21 +289,11 @@ input[type="text"]:focus { border-color: #378add; }
 
   function renderTeams(teams) {
     currentTeamsData = teams || [];
-    const card = document.getElementById('team-card');
     const content = document.getElementById('team-content');
     const actionArea = document.getElementById('coach-action-area');
     const coachPanel = document.getElementById('coach-panel');
     const publicBtn = document.getElementById('public-btn');
 
-    if (!teams || teams.length === 0) {
-      card.classList.remove('visible');
-      content.innerHTML = '<div class="team-waiting">출석 10명 이상이면 자동으로 팀이 배정됩니다</div>';
-      actionArea.style.display = 'none';
-      coachPanel.style.display = 'none';
-      return;
-    }
-
-    card.classList.add('visible');
     actionArea.style.display = isCoachMode ? 'block' : 'none';
     coachPanel.style.display = isCoachMode ? 'block' : 'none';
 
@@ -320,6 +305,11 @@ input[type="text"]:focus { border-color: #378add; }
         publicBtn.textContent = '🙈 숨김 상태 (누르면 공개)';
         publicBtn.className = 'public-toggle-btn is-hidden';
       }
+    }
+
+    if (!teams || teams.length === 0) {
+      content.innerHTML = '<div class="team-waiting">출석 인원이 등록되면 팀이 배정됩니다</div>';
+      return;
     }
 
     if (!isCoachMode && !isTeamPublic) {
@@ -373,29 +363,32 @@ input[type="text"]:focus { border-color: #378add; }
       return;
     }
 
-    const btn = document.getElementById('coach-btn');
-    btn.disabled = true;
-    btn.textContent = '적용 중...';
+    const newTeamMap = {};
+    currentTeamsData.forEach(t => {
+      newTeamMap[t.name] = [];
+      t.members.forEach(m => {
+        const assigned = pendingTeamChanges[m] || t.name;
+        if (!newTeamMap[assigned]) newTeamMap[assigned] = [];
+        newTeamMap[assigned].push(m);
+      });
+    });
 
-    let completed = 0;
+    const updatedTeams = Object.keys(newTeamMap).map(tn => ({ name: tn, members: newTeamMap[tn] }));
+    renderTeams(updatedTeams);
+    alert('팀 변경이 즉시 화면에 저장되었습니다!');
+
     const total = membersToUpdate.length;
+    let completed = 0;
 
     membersToUpdate.forEach(name => {
       const newTeam = pendingTeamChanges[name];
       const cb = 'update_' + Date.now() + '_' + Math.floor(Math.random()*1000);
       
-      window[cb] = function(result) {
+      window[cb] = function() {
         delete window[cb];
         document.getElementById(cb + '_script') && document.getElementById(cb + '_script').remove();
         completed++;
-        
-        if (completed === total) {
-          btn.disabled = false;
-          btn.textContent = '팀 변경 적용하기';
-          pendingTeamChanges = {};
-          alert('팀 변경이 성공적으로 적용되었습니다!');
-          loadAttendance();
-        }
+        if (completed === total) pendingTeamChanges = {};
       };
 
       const script = document.createElement('script');
@@ -405,17 +398,6 @@ input[type="text"]:focus { border-color: #378add; }
         '&name=' + encodeURIComponent(name) +
         '&newTeam=' + encodeURIComponent(newTeam) +
         '&callback=' + cb;
-      
-      script.onerror = function() {
-        completed++;
-        if (completed === total) {
-          btn.disabled = false;
-          btn.textContent = '팀 변경 적용하기';
-          alert('일부 변경 처리 중 오류가 발생했습니다.');
-          loadAttendance();
-        }
-      };
-
       document.body.appendChild(script);
     });
   }
@@ -442,43 +424,42 @@ input[type="text"]:focus { border-color: #378add; }
     if (!name) { alert('이름을 입력해 주세요.'); return; }
     if (!selectedStatus) { alert('출석 여부를 선택해 주세요.'); return; }
 
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
-    btn.textContent = '제출 중...';
+    const existingIndex = currentAttendanceRecords.findIndex(r => r.name === name);
+    if (existingIndex >= 0) {
+      currentAttendanceRecords[existingIndex].status = selectedStatus;
+    } else {
+      currentAttendanceRecords.push({ name: name, status: selectedStatus });
+    }
+    renderMembers(currentAttendanceRecords);
+
+    const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
+    const savedName = name;
+    const savedStatus = selectedStatus;
+
+    document.getElementById('name').value = '';
+    selectedStatus = null;
+    ['attend','absent','undecided'].forEach(s => { document.getElementById('btn-' + s).className = 'status-btn'; });
+    document.getElementById('status-hint').textContent = '';
+    alert(savedName + '님 ' + statusText[savedStatus] + ' 등록 완료!');
 
     const cb = 'submit_' + Date.now();
     window[cb] = function(result) {
       delete window[cb];
       document.getElementById('submit-script') && document.getElementById('submit-script').remove();
-      btn.disabled = false;
-      btn.textContent = '제출하기';
       if (result.success) {
-        document.getElementById('name').value = '';
-        selectedStatus = null;
-        ['attend','absent','undecided'].forEach(s => { document.getElementById('btn-' + s).className = 'status-btn'; });
-        document.getElementById('status-hint').textContent = '';
         isTeamPublic = result.teamPublic !== undefined ? result.teamPublic : true;
         renderTeams(result.teams);
-        loadAttendance();
         updateDuty(result.duty, result.dutyConfirmed, result.nextDuty);
-        const statusText = { attend: '출석', absent: '불참', undecided: '미정' };
-        alert(name + '님 ' + statusText[result.status] + ' 등록 완료!');
-      } else {
-        alert(result.message || '오류가 발생했습니다.');
       }
     };
+
     const script = document.createElement('script');
     script.id = 'submit-script';
     script.src = PROXY_URL + '?action=submitAttendance' +
       '&date=' + saturdayDate +
-      '&name=' + encodeURIComponent(name) +
-      '&status=' + selectedStatus +
+      '&name=' + encodeURIComponent(savedName) +
+      '&status=' + savedStatus +
       '&callback=' + cb;
-    script.onerror = function() {
-      btn.disabled = false;
-      btn.textContent = '제출하기';
-      alert('오류가 발생했습니다. 다시 시도해 주세요.');
-    };
     document.body.appendChild(script);
   }
 
