@@ -16,13 +16,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 .coach-header-toggle { position: absolute; top: 12px; right: 12px; font-size: 11px; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
 
-/* 세탁 당번 카드 (비율 및 글자 크기 강화) */
-.duty-card { background: #fff7e6; border: 1.5px solid #ffd580; border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+/* 세탁 당번 카드 */
+.duty-card { background: #fff7e6; border: 1.5px solid #ffd580; border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative; }
 .duty-icon { font-size: 32px; line-height: 1; padding-top: 2px; flex-shrink: 0; }
-.duty-text { font-size: 13px; color: #a06a00; font-weight: 600; margin-bottom: 2px; }
-.duty-name { font-size: 21px; font-weight: 700; color: #663c00; line-height: 1.3; }
+.duty-header-wrap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.duty-text { font-size: 13px; color: #a06a00; font-weight: 600; }
+.duty-modal-btn { background: #ffe7ba; border: 1px solid #ffd591; color: #d46b08; font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
+.duty-modal-btn:hover { background: #ffd591; }
+.duty-name { font-size: 21px; font-weight: 700; color: #663c00; line-height: 1.3; margin-bottom: 2px; }
 .duty-desc { font-size: 13.5px; color: #555; margin-top: 6px; line-height: 1.55; word-break: keep-all; font-weight: 500; }
 .duty-desc-highlight { color: #d93838; font-weight: 700; }
+
+/* 팝업 모달 스타일 */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.55); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; backdrop-filter: blur(2px); }
+.modal-box { background: #fff; width: 100%; max-width: 400px; max-height: 80vh; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.modal-header { padding: 16px 20px; background: #fff7e6; border-bottom: 1.5px solid #ffd591; display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-size: 16px; font-weight: 700; color: #663c00; display: flex; align-items: center; gap: 6px; }
+.modal-close-btn { background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer; color: #8c6b00; }
+.modal-body { padding: 12px 16px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.duty-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.duty-table th { background: #f8f9fa; color: #495057; font-weight: 600; padding: 10px 8px; text-align: left; border-bottom: 2px solid #dee2e6; position: sticky; top: 0; }
+.duty-table td { padding: 10px 8px; border-bottom: 1px solid #f1f3f5; color: #212529; }
+.duty-table tr:hover { background-color: #fcf8e3; }
+.duty-table .col-idx { width: 44px; text-align: center; color: #868e96; font-size: 12px; }
+.duty-table .col-name { font-weight: 700; color: #185fa5; }
+.duty-table .col-date { text-align: right; color: #495057; font-weight: 500; font-variant-numeric: tabular-nums; }
+.modal-footer { padding: 12px 16px; background: #fafafa; border-top: 1px solid #eee; text-align: right; }
+.modal-btn-close { width: 100%; padding: 11px; background: #185fa5; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; }
 
 .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
 .section-title { font-size: 13px; font-weight: 600; color: #444; letter-spacing: 0.02em; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
@@ -103,11 +123,14 @@ input[type="text"]:focus { border-color: #378add; }
     <div class="sub-info">저녁 7시 풋살 출석체크</div>
   </div>
 
-  <!-- 세탁 당번 안내 배너 (문구 추가 및 크기·비율 조정 완료) -->
+  <!-- 세탁 당번 안내 배너 + 팝업 버튼 -->
   <div class="duty-card">
     <div class="duty-icon">🧺</div>
     <div style="flex:1; min-width:0;">
-      <div class="duty-text">이번주 조끼 세탁 당번</div>
+      <div class="duty-header-wrap">
+        <span class="duty-text">이번주 조끼 세탁 당번</span>
+        <button type="button" class="duty-modal-btn" onclick="openDutyModal()">📋 전체 일정</button>
+      </div>
       <div class="duty-name" id="duty-name">불러오는 중...</div>
       <div class="duty-desc">
         <span class="duty-desc-highlight">이번주 세탁당번이</span> 불참 시 다음 순번이 대신하며, 본인은 다음 차례에 다시 당번이 됩니다.
@@ -177,9 +200,90 @@ input[type="text"]:focus { border-color: #378add; }
 
 </div>
 
+<!-- 세탁 당번 전체 일정 모달 팝업 -->
+<div class="modal-overlay" id="dutyModal" onclick="closeDutyModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">🧺 세탁 당번 전체 순번</div>
+      <button type="button" class="modal-close-btn" onclick="closeDutyModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <table class="duty-table">
+        <thead>
+          <tr>
+            <th class="col-idx">순번</th>
+            <th>이름</th>
+            <th style="text-align: right;">예정일자</th>
+          </tr>
+        </thead>
+        <tbody id="dutyTableBody">
+          <!-- JS에서 리스트 렌더링 -->
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="modal-btn-close" onclick="closeDutyModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const PROXY_URL = 'https://hanmaeum-attendance.min85power.workers.dev';
   const COACH_PIN = '1234';
+
+  // 전달해주신 원본 세탁 당번 28명 리스트
+  const MASTER_DUTY_LIST = [
+    { name: '김태형', date: '2026-11-07' },
+    { name: '안준호', date: '2026-11-14' },
+    { name: '김순환', date: '2026-11-21' },
+    { name: '이종혁', date: '2026-11-28' },
+    { name: '안의진', date: '2026-12-05' },
+    { name: '유동연', date: '2026-12-12' },
+    { name: '최효근', date: '2026-12-19' },
+    { name: '김경진', date: '2026-12-26' },
+    { name: '차선희', date: '2027-01-02' },
+    { name: '이성기', date: '2027-01-09' },
+    { name: '김요한', date: '2027-01-16' },
+    { name: '박민규', date: '2027-01-23' },
+    { name: '설주환', date: '2027-01-30' },
+    { name: '이강호', date: '2027-02-06' },
+    { name: '심은혁', date: '2027-02-13' },
+    { name: '서정현', date: '2027-02-20' },
+    { name: '강성금산', date: '2027-02-27' },
+    { name: '허영환', date: '2027-03-06' },
+    { name: '오갑석', date: '2027-03-13' },
+    { name: '조진수', date: '2027-03-20' },
+    { name: '홍승록', date: '2027-03-27' },
+    { name: '경상일', date: '2027-04-03' },
+    { name: '김승환', date: '2027-04-10' },
+    { name: '이지훈', date: '2027-04-17' },
+    { name: '유경태', date: '2027-04-24' },
+    { name: '허창걸', date: '2027-05-01' },
+    { name: '이승민', date: '2027-05-08' },
+    { name: '서주환', date: '2027-05-15' }
+  ];
+
+  function renderDutyTable() {
+    const tbody = document.getElementById('dutyTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = MASTER_DUTY_LIST.map((item, index) => {
+      return `<tr>
+        <td class="col-idx">${index + 1}</td>
+        <td class="col-name">${item.name}</td>
+        <td class="col-date">${item.date}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openDutyModal() {
+    renderDutyTable();
+    document.getElementById('dutyModal').style.display = 'flex';
+  }
+
+  function closeDutyModal(e) {
+    if (e && e.target !== e.currentTarget && e.target.className !== 'modal-close-btn') return;
+    document.getElementById('dutyModal').style.display = 'none';
+  }
 
   let selectedStatus = null;
   let saturdayDate = '';
