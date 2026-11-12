@@ -158,28 +158,30 @@
 
     .team-theme-3 { background: #faf5ff; border-color: #e9d5ff; }
     .team-theme-3 .team-name { color: #7e22ce; border-bottom-color: #f3e8ff; }
-    /* 명단 칩 */
-    .chips-group { margin-bottom: 12px; }
+
+    /* 명단 칩 & 카운트 배지 */
+    .chips-group { margin-bottom: 14px; }
     .group-badge {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
       margin-bottom: 8px;
     }
     .badge-attend-title { background: #dcfce7; color: #166534; }
     .badge-absent-title { background: #fee2e2; color: #991b1b; }
     .badge-undecided-title { background: #fef3c7; color: #92400e; }
-    .chips-flex { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chips-flex { display: flex; flex-wrap: wrap; gap: 6px; min-height: 24px; align-items: center; }
+    .empty-dash { color: #cbd5e1; font-size: 13px; padding-left: 4px; }
     .member-pill {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      padding: 4px 10px;
-      font-size: 12px;
+      padding: 5px 11px;
+      font-size: 12.5px;
       font-weight: 600;
       color: #334155;
       box-shadow: 0 1px 2px rgba(0,0,0,0.02);
@@ -270,10 +272,36 @@
 
     /* 코치모드 관리 패널 */
     .coach-box {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed #cbd5e1;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1.5px dashed #cbd5e1;
       display: none;
+    }
+    .coach-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .coach-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .coach-sel {
+      padding: 2px 4px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #ffffff;
+      color: #1e3a8a;
     }
   </style>
 </head>
@@ -346,49 +374,34 @@
 
     <!-- 코치 모드 전용 수동 제어판 -->
     <div id="coachPanel" class="coach-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
         <span style="font-size:12px; font-weight:800; color:#0d3b6e;">⚙️ 코치 팀 조정</span>
-        <button id="btnTogglePublic" onclick="togglePublicStatus()" style="padding:4px 8px; font-size:11px; border-radius:4px; border:1px solid #cbd5e1; background:#fff; cursor:pointer;">공개/비공개</button>
+        <button id="btnTogglePublic" type="button" onclick="togglePublicStatus()" style="padding:6px 10px; font-size:11.5px; font-weight:800; border-radius:6px; border:1px solid #1864ab; background:#eff6ff; color:#1864ab; cursor:pointer;">상태 확인중...</button>
       </div>
-      <div id="coachMemberList" style="max-height:160px; overflow-y:auto; font-size:12px;"></div>
-      <button onclick="applyCoachTeamChanges()" style="width:100%; margin-top:8px; background:#0d3b6e; color:#fff; border:none; padding:8px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">팀 변경 적용하기</button>
+      <div id="coachMemberList" class="coach-grid"></div>
+      <button type="button" onclick="applyCoachTeamChanges()" style="width:100%; background:#0d3b6e; color:#fff; border:none; padding:10px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">팀 변경 일괄 적용하기</button>
     </div>
   </div>
 
-  <!-- 5. 출석 현황 카드 -->
+  <!-- 5. 출석 현황 카드 (중복 제거 및 배지 옆 숫자 표시) -->
   <div class="card">
     <div class="section-title">📊 출석 현황</div>
 
-    <div class="summary-stats">
-      <div class="stat-box stat-attend">
-        <div id="countAttend" class="stat-num">0</div>
-        <div class="stat-label">출석</div>
-      </div>
-      <div class="stat-box stat-absent">
-        <div id="countAbsent" class="stat-num">0</div>
-        <div class="stat-label">불참</div>
-      </div>
-      <div class="stat-box stat-undecided">
-        <div id="countUndecided" class="stat-num">0</div>
-        <div class="stat-label">미정</div>
-      </div>
-    </div>
-
     <!-- 출석 칩 -->
     <div class="chips-group">
-      <div class="group-badge badge-attend-title">✓ 출석</div>
+      <div class="group-badge badge-attend-title">✓ 출석 <span id="countAttend">0</span></div>
       <div id="chipsAttend" class="chips-flex"></div>
     </div>
 
     <!-- 불참 칩 -->
     <div class="chips-group">
-      <div class="group-badge badge-absent-title">✕ 불참</div>
+      <div class="group-badge badge-absent-title">✕ 불참 <span id="countAbsent">0</span></div>
       <div id="chipsAbsent" class="chips-flex"></div>
     </div>
 
     <!-- 미정 칩 -->
     <div class="chips-group" style="margin-bottom:0;">
-      <div class="group-badge badge-undecided-title">? 미정</div>
+      <div class="group-badge badge-undecided-title">? 미정 <span id="countUndecided">0</span></div>
       <div id="chipsUndecided" class="chips-flex"></div>
     </div>
   </div>
@@ -452,13 +465,13 @@
     const cbName = 'cb_' + Date.now();
     window[cbName] = function(data) {
       delete window[cbName];
-      document.body.removeChild(script);
+      if (script.parentNode) script.parentNode.removeChild(script);
       cachedData = data;
       renderAll(data);
     };
 
     const script = document.createElement('script');
-    script.src = `${PROXY_URL}?action=getAttendance&date=${targetDate}&callback=${cbName}`;
+    script.src = `${PROXY_URL}?action=getAttendance&date=${targetDate}&callback=${cbName}&_t=${Date.now()}`;
     document.body.appendChild(script);
   }
 
@@ -469,7 +482,7 @@
     // 1. 이번 주 세탁 당번 이름
     document.getElementById('currentDutyName').textContent = data.duty || '지정자 없음';
 
-    // 2. 출석 통계 및 명단 칩
+    // 2. 출석 통계(배지 옆 숫자) 및 명단 칩
     const records = data.records || [];
     const attends = records.filter(r => r.status === '출석' || r.status === 'attend');
     const absents = records.filter(r => r.status === '불참' || r.status === 'absent');
@@ -485,159 +498,150 @@
 
     // 3. 팀 배정 렌더링 (코치 모드 또는 공개 여부에 따라 표시)
     renderTeams(data.teams, data.teamPublic);
+    updatePublicBtnUI(data.teamPublic);
   }
 
   function renderChips(containerId, list) {
     const el = document.getElementById(containerId);
-    if (list.length === 0) {
-      el.innerHTML = '<span style="font-size:11px; color:#cbd5e1;">-</span>';
+    if (!list || list.length === 0) {
+      el.innerHTML = '<span class="empty-dash">-</span>';
       return;
     }
-    el.innerHTML = list.map(item => `<div class="member-pill">${item.name}</div>`).join('');
+    el.innerHTML = list.map(item => `<span class="member-pill">${item.name}</span>`).join('');
   }
 
-  // 팀 배정 카드 렌더링
   function renderTeams(teams, isPublic) {
     const container = document.getElementById('teamsContainer');
-    
-    // 코치진 조율 중 (비공개) 상태 유지
     if (!isPublic && !isCoachMode) {
       container.innerHTML = `
         <div class="team-empty-box">
           🔒 코치진이 팀 배정을 조율 중입니다.<br>잠시만 기다려주세요!
-        </div>
-      `;
+        </div>`;
       return;
     }
 
     if (!teams || teams.length === 0) {
-      container.innerHTML = `
-        <div class="team-empty-box">
-          참석자가 모이면 팀이 자동 편성됩니다.
-        </div>
-      `;
+      container.innerHTML = `<div class="team-empty-box">아직 출석 인원이 없어 팀이 배정되지 않았습니다.</div>`;
+      if (isCoachMode) document.getElementById('coachMemberList').innerHTML = '';
       return;
     }
 
     let html = '<div class="teams-grid">';
-    teams.forEach((t, idx) => {
+    teams.forEach((team, idx) => {
       const themeClass = `team-theme-${idx % 4}`;
-      let mHtml = t.members.map(m => `<div class="team-member-item">• ${m}</div>`).join('');
+      const membersHtml = team.members.map(m => `<div class="team-member-item">• ${m}</div>`).join('');
       html += `
         <div class="team-box ${themeClass}">
-          <div class="team-name">${t.name}팀 (${t.members.length}명)</div>
-          ${mHtml || '<div style="color:#cbd5e1; font-size:11px;">인원 없음</div>'}
-        </div>
-      `;
+          <div class="team-name">
+            <span>${team.name}팀</span>
+            <span>${team.members.length}명</span>
+          </div>
+          ${membersHtml}
+        </div>`;
     });
     html += '</div>';
     container.innerHTML = html;
 
-    if (isCoachMode) renderCoachControls(teams);
+    if (isCoachMode) {
+      renderCoachControls(teams);
+    }
   }
 
-  // 출석 제출
   function submitAttendance() {
-    const input = document.getElementById('inputName');
-    const name = input.value.trim();
+    const nameInput = document.getElementById('inputName');
+    const name = nameInput.value.trim();
     if (!name) {
-      input.focus();
+      nameInput.focus();
       return;
     }
 
-    const cbName = 'cb_sub_' + Date.now();
+    const btn = document.querySelector('.btn-submit');
+    btn.textContent = '등록 중...';
+    btn.disabled = true;
+
+    const cbName = 'sub_' + Date.now();
     window[cbName] = function(res) {
       delete window[cbName];
-      document.body.removeChild(script);
-      input.value = '';
-      fetchAttendance();
+      if (script.parentNode) script.parentNode.removeChild(script);
+      btn.textContent = '제출하기';
+      btn.disabled = false;
+      nameInput.value = '';
+      if (res && res.records) {
+        cachedData = res;
+        renderAll(res);
+      } else {
+        fetchAttendance();
+      }
     };
 
     const script = document.createElement('script');
-    script.src = `${PROXY_URL}?action=submitAttendance&date=${targetDate}&name=${encodeURIComponent(name)}&status=${encodeURIComponent(selectedStatus)}&callback=${cbName}`;
+    script.src = `${PROXY_URL}?action=submitAttendance&date=${targetDate}&name=${encodeURIComponent(name)}&status=${selectedStatus}&callback=${cbName}`;
     document.body.appendChild(script);
   }
 
-  // 📑 모달 팝업 열기: 당번현황 시트 결과 연동 (완료된 사람만 체크 표시)
   function openScheduleModal() {
-    const modal = document.getElementById('dutyModal');
-    const listBody = document.getElementById('modalListBody');
-    modal.style.display = 'flex';
+    const bodyEl = document.getElementById('modalListBody');
+    const dutyList = (cachedData && cachedData.dutyList) ? cachedData.dutyList : [];
+    const currentDuty = (cachedData && cachedData.duty) ? cachedData.duty : '';
 
-    if (!cachedData || !cachedData.dutyList) {
-      listBody.innerHTML = '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:12px;">데이터를 불러오는 중입니다...</div>';
-      return;
-    }
+    if (dutyList.length === 0) {
+      bodyEl.innerHTML = '<div style="padding:24px; text-align:center; color:#94a3b8; font-size:13px;">당번 명단을 불러오는 중입니다...</div>';
+    } else {
+      let futureOffset = 0;
+      const baseParts = targetDate.split('-');
+      const baseDateObj = new Date(Number(baseParts[0]), Number(baseParts[1]) - 1, Number(baseParts[2]));
 
-    const list = cachedData.dutyList;
-    const currentDutyName = cachedData.duty; // 출석체크로 확정된 오늘 실제 당번 (김순환)
-    const records = cachedData.records || [];
-    
-    // 출석 기록 맵 구성 (이름 -> 상태)
-    const statusMap = {};
-    records.forEach(r => {
-      const cleanName = String(r.name).replace(/\s/g, '');
-      statusMap[cleanName] = r.status;
-    });
-
-    const baseDate = new Date(targetDate);
-    let html = '';
-    let futureWeekOffset = 1;
-
-    // 오늘 당번(김순환)의 순번 index 찾기
-    const currentDutyIndex = list.findIndex(item => item.name === currentDutyName);
-
-    list.forEach((item, index) => {
-      const cleanName = String(item.name).replace(/\s/g, '');
-      // 시트 B열에 TRUE로 체크되어 있으면 무조건 완료로 표시
-      const isDone = (item.done === true || String(item.done).toLowerCase() === 'true');
-      const isTodayDuty = (!isDone && item.name === currentDutyName);
-
-      let dateDisplay = '';
-      let rowClass = 'modal-row';
-
-      if (isDone) {
-        // 1. 완료된 사람 (수동 TRUE 또는 자동 정산 완료) -> 취소선 및 완료일 체크 표시
-        rowClass += ' done-row';
-        dateDisplay = item.date ? `✔ 완료 (${item.date})` : `✔ 완료`;
-      } else if (isTodayDuty) {
-        // 2. 이번 주 당번 -> 파란색 하이라이트
-        rowClass += ' current-row';
-        dateDisplay = `🔥 이번주 (${targetDate})`;
-      } else {
-        // 3. 아직 완료 안 한 대기자
-        const memberStatus = statusMap[cleanName];
-        const isAbsentToday = (memberStatus === 'absent' || memberStatus === '불참');
-
-        if (currentDutyIndex !== -1 && index < currentDutyIndex && isAbsentToday) {
-          rowClass += ' passed-row';
-          dateDisplay = `불참 (다음 이월)`;
-        } else {
-          const estDate = new Date(baseDate);
-          estDate.setDate(baseDate.getDate() + (futureWeekOffset * 7));
-          const ey = estDate.getFullYear();
-          const em = String(estDate.getMonth() + 1).padStart(2, '0');
-          const ed = String(estDate.getDate()).padStart(2, '0');
-          
-          dateDisplay = `${ey}-${em}-${ed} (예정)`;
-          futureWeekOffset++;
+      bodyEl.innerHTML = dutyList.map((item, idx) => {
+        if (item.done) {
+          return `
+            <div class="modal-row done-row">
+              <div class="idx">${idx + 1}</div>
+              <div class="name">${item.name}</div>
+              <div class="date">✔ 완료${item.date ? ' (' + item.date.slice(5) + ')' : ''}</div>
+            </div>`;
         }
-      }
-
-      html += `
-        <div class="${rowClass}">
-          <div class="idx">${index + 1}</div>
-          <div class="name">${item.name}</div>
-          <div class="date">${dateDisplay}</div>
-        </div>
-      `;
-    });
-
-    listBody.innerHTML = html;
+        if (item.name === currentDuty) {
+          futureOffset = 1;
+          return `
+            <div class="modal-row current-row">
+              <div class="idx">${idx + 1}</div>
+              <div class="name">${item.name}</div>
+              <div class="date">🔥 이번주 (${targetDate})</div>
+            </div>`;
+        }
+        const d = new Date(baseDateObj);
+        d.setDate(baseDateObj.getDate() + (futureOffset * 7));
+        futureOffset++;
+        const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return `
+          <div class="modal-row">
+            <div class="idx">${idx + 1}</div>
+            <div class="name">${item.name}</div>
+            <div class="date">${dStr}</div>
+          </div>`;
+      }).join('');
+    }
+    document.getElementById('dutyModal').style.display = 'flex';
   }
 
   function closeScheduleModal() {
     document.getElementById('dutyModal').style.display = 'none';
+  }
+
+  function updatePublicBtnUI(isPublic) {
+    const btn = document.getElementById('btnTogglePublic');
+    if (!btn) return;
+    if (isPublic) {
+      btn.textContent = '🔓 공개중 (비공개로 전환)';
+      btn.style.background = '#dcfce7';
+      btn.style.color = '#166534';
+      btn.style.borderColor = '#86efac';
+    } else {
+      btn.textContent = '🔒 비공개중 (공개로 전환)';
+      btn.style.background = '#fee2e2';
+      btn.style.color = '#991b1b';
+      btn.style.borderColor = '#fca5a5';
+    }
   }
 
   // 코치 모드
@@ -647,7 +651,10 @@
       if (pw === '1234') {
         isCoachMode = true;
         document.getElementById('coachPanel').style.display = 'block';
-        if (cachedData) renderTeams(cachedData.teams, true);
+        if (cachedData) {
+          renderTeams(cachedData.teams, true);
+          updatePublicBtnUI(cachedData.teamPublic);
+        }
       }
     } else {
       isCoachMode = false;
@@ -659,15 +666,15 @@
   function renderCoachControls(teams) {
     const listEl = document.getElementById('coachMemberList');
     listEl.innerHTML = '';
-    const allNames = teams.map(t => t.name);
+    const allNames = ['A', 'B', 'C', 'D'].slice(0, Math.max(teams.length, 2));
 
     teams.forEach(t => {
       t.members.forEach(member => {
         let opts = allNames.map(tn => `<option value="${tn}" ${tn === t.name ? 'selected' : ''}>${tn}팀</option>`).join('');
         listEl.innerHTML += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid #f1f5f9;">
-            <span>${member}</span>
-            <select data-member="${member}" class="coach-sel" style="padding:2px 4px; border:1px solid #cbd5e1; border-radius:4px;">
+          <div class="coach-item">
+            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${member}</span>
+            <select data-member="${member}" class="coach-sel">
               ${opts}
             </select>
           </div>
@@ -682,9 +689,12 @@
       const name = sel.getAttribute('data-member');
       const newTeam = sel.value;
       const cb = 'c_' + Math.random().toString(36).substring(7);
-      window[cb] = function() { delete window[cb]; document.body.removeChild(s); };
+      window[cb] = function() {
+        delete window[cb];
+        if (s.parentNode) s.parentNode.removeChild(s);
+      };
       const s = document.createElement('script');
-      s.src = `${PROXY_URL}?action=updateTeam&date=${targetDate}&name=${encodeURIComponent(name)}&newTeam=${encodeURIComponent(newTeam)}&callback=${cb}`;
+      s.src = `${PROXY_URL}?action=updateTeam&date=${targetDate}&name=${encodeURIComponent(name)}&newTeam=${encodeURIComponent(newTeam)}&callback=${cb}&_t=${Date.now()}`;
       document.body.appendChild(s);
     });
 
@@ -694,16 +704,21 @@
   }
 
   function togglePublicStatus() {
-    const cur = cachedData ? cachedData.teamPublic : false;
+    const cur = cachedData ? Boolean(cachedData.teamPublic) : false;
     const next = !cur;
+    
+    // UI 즉시 반영
+    if (cachedData) cachedData.teamPublic = next;
+    updatePublicBtnUI(next);
+
     const cb = 'pub_' + Date.now();
     window[cb] = function() {
       delete window[cb];
-      document.body.removeChild(s);
+      if (s.parentNode) s.parentNode.removeChild(s);
       fetchAttendance();
     };
     const s = document.createElement('script');
-    s.src = `${PROXY_URL}?action=toggleTeamPublic&date=${targetDate}&public=${next}&callback=${cb}`;
+    s.src = `${PROXY_URL}?action=toggleTeamPublic&date=${targetDate}&public=${next}&callback=${cb}&_t=${Date.now()}`;
     document.body.appendChild(s);
   }
 
